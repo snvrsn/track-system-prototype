@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Plan school tasks and important dates in your monthly calendar."
+    />
+    <title>School Calendar — Track</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #fffbf4;
+        --navy: #20209b;
+        --navy-light: #4141b7;
+        --muted: #68688d;
+        --line: #d6d4e7;
+        --white: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background: var(--paper);
+        color: var(--navy);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .page {
+        width: min(100% - 32px, 1040px);
+        margin: 0 auto;
+        padding: 28px 0 48px;
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-bottom: 24px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        text-underline-offset: 3px;
+      }
+
+      .back-link:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 3px solid var(--navy-light);
+        outline-offset: 3px;
+      }
+
+      header {
+        margin-bottom: 28px;
+        text-align: center;
+      }
+
+      .brand {
+        margin: 0;
+        font-family: "Arial Black", Arial, Helvetica, sans-serif;
+        font-size: clamp(2.8rem, 8vw, 4.5rem);
+        letter-spacing: -0.065em;
+        line-height: 0.95;
+        text-transform: uppercase;
+      }
+
+      header p {
+        margin: 10px 0 0;
+        font-size: 0.9rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+        align-items: start;
+        gap: 24px;
+      }
+
+      .task-panel,
+      .calendar-panel {
+        border: 2px solid var(--navy);
+        border-radius: 14px;
+        background: var(--paper);
+      }
+
+      .task-panel {
+        padding: 20px;
+      }
+
+      .task-panel h2 {
+        margin: 0 0 8px;
+        font-size: 1.2rem;
+      }
+
+      .task-panel p {
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.45;
+      }
+
+      .task-form {
+        display: grid;
+        gap: 14px;
+      }
+
+      .field-label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      input,
+      select {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--navy-light);
+        border-radius: 8px;
+        background: var(--white);
+        color: var(--navy);
+        font: inherit;
+      }
+
+      select {
+        appearance: none;
+      }
+
+      input::placeholder {
+        color: #77778e;
+      }
+
+      button {
+        min-height: 42px;
+        padding: 9px 14px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--navy);
+        color: var(--paper);
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        transition: background-color 140ms ease;
+      }
+
+      button:hover {
+        background: #3030ad;
+      }
+
+      .color-legend {
+        margin-top: 18px;
+      }
+
+      .color-legend h3 {
+        margin: 0 0 10px;
+        font-size: 0.95rem;
+      }
+
+      .legend-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .legend-item {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.73rem;
+        font-weight: 700;
+      }
+
+      .legend-dot {
+        width: 12px;
+        height: 12px;
+        flex: 0 0 12px;
+        border: 1px solid rgb(32 32 155 / 18%);
+        border-radius: 50%;
+      }
+
+      .calendar-panel {
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .calendar-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px;
+        border-bottom: 2px solid var(--navy);
+      }
+
+      .calendar-toolbar h2 {
+        margin: 0;
+        text-align: center;
+        font-size: clamp(1.15rem, 3vw, 1.5rem);
+      }
+
+      .calendar-toolbar button {
+        min-width: 84px;
+      }
+
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+      }
+
+      .weekday,
+      .day {
+        min-width: 0;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .weekday:nth-child(7n),
+      .day:nth-child(7n) {
+        border-right: 0;
+      }
+
+      .weekday {
+        padding: 11px 4px;
+        background: #f1eef9;
+        color: var(--navy);
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .day {
+        min-height: 112px;
+        padding: 8px;
+      }
+
+      .day.is-outside-month {
+        background: #f8f6f1;
+        color: #85849b;
+      }
+
+      .day-number {
+        display: inline-flex;
+        width: 28px;
+        height: 28px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+
+      .day.is-today .day-number {
+        background: var(--navy);
+        color: var(--paper);
+      }
+
+      .task-list {
+        display: grid;
+        gap: 4px;
+        margin: 6px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .task-badge {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        padding: 4px 6px;
+        border-radius: 7px;
+        background: var(--navy);
+        color: #1f2937;
+        cursor: pointer;
+        font-size: 0.75rem;
+        line-height: 1.25;
+        text-align: left;
+      }
+
+      .task-badge:hover {
+        background-color: var(--badge-color);
+        text-decoration: underline;
+      }
+
+      .status {
+        min-height: 1.25em;
+        margin: 12px 0 0;
+        color: var(--navy);
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 720px) {
+        .content {
+          grid-template-columns: 1fr;
+        }
+
+        .task-panel {
+          order: 1;
+        }
+
+        .calendar-panel {
+          order: 2;
+        }
+
+        .day {
+          min-height: 92px;
+          padding: 5px;
+        }
+      }
+
+      @media (max-width: 420px) {
+        .page {
+          width: min(100% - 20px, 1040px);
+          padding-top: 18px;
+        }
+
+        .calendar-toolbar {
+          padding: 12px 8px;
+          gap: 6px;
+        }
+
+        .calendar-toolbar button {
+          min-width: 68px;
+          padding: 8px;
+          font-size: 0.88rem;
+        }
+
+        .weekday {
+          padding: 9px 1px;
+          font-size: 0.72rem;
+        }
+
+        .day {
+          min-height: 76px;
+          padding: 3px;
+        }
+
+        .day-number {
+          width: 24px;
+          height: 24px;
+          font-size: 0.8rem;
+        }
+
+        .task-badge {
+          padding: 2px;
+          font-size: 0.66rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <a class="back-link" href="index.html">Back to Main Menu</a>
+
+      <header>
+        <h1 class="brand">Track</h1>
+        <p>School Calendar</p>
+      </header>
+
+      <div class="content">
+        <section class="task-panel" aria-labelledby="task-heading">
+          <h2 id="task-heading">Add a DEADLINE</h2>
+          <p>Choose a date to place your deadline on the calendar.</p>
+          <form class="task-form" id="task-form">
+            <div>
+              <label class="field-label" for="task-description">Deadline description</label>
+              <input
+                id="task-description"
+                name="description"
+                type="text"
+                placeholder="Enter Deadline Description"
+                maxlength="160"
+                required
+              />
+            </div>
+            <div>
+              <label class="field-label" for="task-subject">Subject</label>
+              <select id="task-subject" name="subject" required>
+                <option value="MATHEMATICS">MATHEMATICS</option>
+                <option value="SCIENCE">SCIENCE</option>
+                <option value="FILIPINO">FILIPINO</option>
+                <option value="ENGLISH">ENGLISH</option>
+                <option value="RVE">RVE</option>
+                <option value="AP">AP</option>
+                <option value="TLE">TLE</option>
+                <option value="MAPEH">MAPEH</option>
+                <option value="COMPUTER">COMPUTER</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="task-date">Date</label>
+              <input id="task-date" name="date" type="date" required />
+            </div>
+            <button type="submit">Add Task</button>
+            <section class="color-legend" aria-labelledby="legend-heading">
+              <h3 id="legend-heading">Color Coding</h3>
+              <ul class="legend-list" id="color-legend"></ul>
+            </section>
+          </form>
+          <p class="status" id="form-status" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="calendar-panel" aria-labelledby="month-heading">
+          <div class="calendar-toolbar">
+            <button id="previous-month" type="button" aria-label="Show previous month">
+              Previous
+            </button>
+            <h2 id="month-heading" aria-live="polite"></h2>
+            <button id="next-month" type="button" aria-label="Show next month">
+              Next
+            </button>
+          </div>
+          <div class="calendar-grid" id="calendar-grid" role="grid" aria-labelledby="month-heading"></div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const calendarGrid = document.querySelector("#calendar-grid");
+      const monthHeading = document.querySelector("#month-heading");
+      const taskForm = document.querySelector("#task-form");
+      const descriptionInput = document.querySelector("#task-description");
+      const subjectInput = document.querySelector("#task-subject");
+      const dateInput = document.querySelector("#task-date");
+      const formStatus = document.querySelector("#form-status");
+      const storageKey = "track-school-calendar-tasks";
+      const subjectColors = {
+        MATHEMATICS: "#FEE2E2",
+        SCIENCE: "#DBEAFE",
+        FILIPINO: "#FEF3C7",
+        ENGLISH: "#DCFCE7",
+        RVE: "#F3E8FF",
+        AP: "#FFEDD5",
+        TLE: "#E0F2FE",
+        MAPEH: "#F1F5F9",
+        COMPUTER: "#FAE8FF",
+      };
+      let nextTaskId = 1;
+      const tasks = loadTasks();
+      const today = new Date();
+      let displayedYear = today.getFullYear();
+      let displayedMonth = today.getMonth();
+
+      const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+      function renderColorLegend() {
+        const legend = document.querySelector("#color-legend");
+        Object.entries(subjectColors).forEach(([subject, color]) => {
+          const item = document.createElement("li");
+          const dot = document.createElement("span");
+
+          item.className = "legend-item";
+          dot.className = "legend-dot";
+          dot.style.backgroundColor = color;
+          dot.setAttribute("aria-hidden", "true");
+          item.append(dot, document.createTextNode(subject));
+          legend.append(item);
+        });
+      }
+
+      function formatDateKey(year, month, day) {
+        return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      }
+
+      function loadTasks() {
+        try {
+          const storedTasks = localStorage.getItem(storageKey);
+          if (!storedTasks) return [];
+
+          const parsedTasks = JSON.parse(storedTasks);
+          if (
+            !Array.isArray(parsedTasks) ||
+            !parsedTasks.every(
+              (task) =>
+                task &&
+                Number.isInteger(task.id) &&
+                typeof task.description === "string" &&
+                typeof task.date === "string" &&
+                Object.hasOwn(subjectColors, task.subject),
+            )
+          ) {
+            throw new Error("Saved calendar tasks have an invalid format.");
+          }
+
+          nextTaskId =
+            parsedTasks.reduce((maxId, task) => Math.max(maxId, task.id), 0) + 1;
+          return parsedTasks;
+        } catch (error) {
+          formStatus.textContent = `Could not load saved tasks: ${error.message}`;
+          return [];
+        }
+      }
+
+      function saveTasks() {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(tasks));
+          return true;
+        } catch (error) {
+          formStatus.textContent = `Could not save tasks: ${error.message}`;
+          return false;
+        }
+      }
+
+      function handleTaskAction(taskId) {
+        const taskIndex = tasks.findIndex((task) => task.id === taskId);
+        if (taskIndex === -1) return;
+        const task = tasks[taskIndex];
+
+        const response = window.prompt(
+          "What would you like to do with this task? Type 'delete' to remove it, or type new text to edit it:",
+          task.description,
+        );
+        if (response === null) return;
+
+        if (response.trim().toLowerCase() === "delete") {
+          const [deletedTask] = tasks.splice(taskIndex, 1);
+          if (!saveTasks()) {
+            tasks.splice(taskIndex, 0, deletedTask);
+            return;
+          }
+
+          renderCalendar();
+          formStatus.textContent = "Task deleted.";
+          return;
+        }
+
+        const updatedDescription = response.trim();
+        if (!updatedDescription) {
+          formStatus.textContent = "Task description cannot be empty.";
+          return;
+        }
+
+        const previousDescription = task.description;
+        task.description = updatedDescription;
+        if (!saveTasks()) {
+          task.description = previousDescription;
+          return;
+        }
+
+        renderCalendar();
+        formStatus.textContent = "Task updated.";
+      }
+
+      function renderCalendar() {
+        const firstWeekday = new Date(displayedYear, displayedMonth, 1).getDay();
+        const daysInMonth = new Date(displayedYear, displayedMonth + 1, 0).getDate();
+        const daysInPreviousMonth = new Date(displayedYear, displayedMonth, 0).getDate();
+        const cellCount = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+
+        monthHeading.textContent = new Intl.DateTimeFormat(undefined, {
+          month: "long",
+          year: "numeric",
+        }).format(new Date(displayedYear, displayedMonth, 1));
+        calendarGrid.replaceChildren();
+
+        weekdays.forEach((weekday) => {
+          const heading = document.createElement("div");
+          heading.className = "weekday";
+          heading.setAttribute("role", "columnheader");
+          heading.textContent = weekday;
+          calendarGrid.append(heading);
+        });
+
+        for (let index = 0; index < cellCount; index += 1) {
+          const dayOffset = index - firstWeekday + 1;
+          const isCurrentMonth = dayOffset > 0 && dayOffset <= daysInMonth;
+          const date = isCurrentMonth
+            ? new Date(displayedYear, displayedMonth, dayOffset)
+            : dayOffset <= 0
+              ? new Date(displayedYear, displayedMonth - 1, daysInPreviousMonth + dayOffset)
+              : new Date(displayedYear, displayedMonth + 1, dayOffset - daysInMonth);
+          const cell = document.createElement("div");
+          const dayNumber = document.createElement("span");
+          const dateKey = formatDateKey(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+          );
+
+          cell.className = "day";
+          cell.setAttribute("role", "gridcell");
+          cell.setAttribute(
+            "aria-label",
+            `${new Intl.DateTimeFormat(undefined, {
+              dateStyle: "full",
+            }).format(date)}${isCurrentMonth ? "" : ", outside current month"}`,
+          );
+          if (!isCurrentMonth) cell.classList.add("is-outside-month");
+          if (
+            date.getFullYear() === today.getFullYear() &&
+            date.getMonth() === today.getMonth() &&
+            date.getDate() === today.getDate()
+          ) {
+            cell.classList.add("is-today");
+          }
+
+          dayNumber.className = "day-number";
+          dayNumber.textContent = String(date.getDate());
+          cell.append(dayNumber);
+
+          const matchingTasks = tasks.filter((task) => task.date === dateKey);
+          if (matchingTasks.length > 0) {
+            const taskList = document.createElement("ul");
+            taskList.className = "task-list";
+            taskList.setAttribute("aria-label", "Tasks");
+
+            matchingTasks.forEach((task) => {
+              const item = document.createElement("li");
+              const taskButton = document.createElement("button");
+
+              taskButton.className = "task-badge";
+              taskButton.type = "button";
+              taskButton.textContent = task.description;
+              taskButton.style.backgroundColor = subjectColors[task.subject];
+              taskButton.style.setProperty("--badge-color", subjectColors[task.subject]);
+              taskButton.setAttribute(
+                "aria-label",
+                `${task.subject} task: ${task.description}. Select to edit or delete.`,
+              );
+              taskButton.addEventListener("click", () => handleTaskAction(task.id));
+
+              item.append(taskButton);
+              taskList.append(item);
+            });
+
+            cell.append(taskList);
+          }
+
+          calendarGrid.append(cell);
+        }
+      }
+
+      taskForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const description = descriptionInput.value.trim();
+
+        if (!description || !dateInput.value) {
+          formStatus.textContent = "Enter a task description and choose a date.";
+          return;
+        }
+
+        const task = {
+          id: nextTaskId,
+          description,
+          subject: subjectInput.value,
+          date: dateInput.value,
+        };
+        tasks.push(task);
+        if (!saveTasks()) {
+          tasks.pop();
+          return;
+        }
+        nextTaskId += 1;
+        renderCalendar();
+        formStatus.textContent = "Task added to the calendar.";
+        taskForm.reset();
+        subjectInput.value = "MATHEMATICS";
+        dateInput.value = formatDateKey(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate(),
+        );
+        descriptionInput.focus();
+      });
+
+      document.querySelector("#previous-month").addEventListener("click", () => {
+        displayedMonth -= 1;
+        if (displayedMonth < 0) {
+          displayedMonth = 11;
+          displayedYear -= 1;
+        }
+        renderCalendar();
+      });
+
+      document.querySelector("#next-month").addEventListener("click", () => {
+        displayedMonth += 1;
+        if (displayedMonth > 11) {
+          displayedMonth = 0;
+          displayedYear += 1;
+        }
+        renderCalendar();
+      });
+
+      dateInput.value = formatDateKey(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+      );
+      renderColorLegend();
+      renderCalendar();
+    </script>
+  </body>
+</html>
