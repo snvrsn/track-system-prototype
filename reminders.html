@@ -9,8 +9,10 @@
     <style>
       :root {
         color-scheme: light;
-        --paper: #FFFBF4;
-        --indigo: #20209b;
+        --paper: #fdf9f4;
+        --indigo: #001cc8;
+        --board-edge: #001cc8;
+        --note-paper: #ffffff;
       }
 
       body {
@@ -19,23 +21,361 @@
         font-family: Arial, Helvetica, sans-serif;
       }
 
+      main {
+        max-width: 980px;
+      }
+
       .display-title {
         font-family: "Arial Black", Arial, Helvetica, sans-serif;
         letter-spacing: -0.065em;
         line-height: 0.95;
       }
+
+      .reminder-board {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+        align-content: start;
+        gap: 2rem;
+        width: 100%;
+        max-width: 760px;
+        aspect-ratio: 1;
+        margin-inline: auto;
+        padding: 2.5rem;
+        overflow-y: auto;
+        border: 2px solid var(--board-edge);
+        border-radius: 1rem;
+        background-color: var(--paper);
+        background-image: radial-gradient(#001cc8 0.6px, transparent 0.6px);
+        background-size: 18px 18px;
+      }
+
+      .reminder-note {
+        position: relative;
+        overflow-wrap: anywhere;
+        min-height: 170px;
+        padding: 2rem 1.25rem 1.25rem;
+        border: 1px solid var(--board-edge);
+        border-radius: 0.2rem;
+        background: var(--note-paper);
+        box-shadow: 0 6px 12px rgb(0 0 0 / 16%);
+        text-align: left;
+      }
+
+      .reminder-note.note-odd {
+        transform: rotate(-2deg);
+      }
+
+      .reminder-note.note-even {
+        transform: rotate(3deg);
+      }
+
+      .pushpin {
+        position: absolute;
+        top: -13px;
+        left: 50%;
+        width: 25px;
+        height: 25px;
+        border: 2px solid var(--paper);
+        border-radius: 50%;
+        background: var(--indigo);
+        box-shadow: 0 2px 4px rgb(0 0 0 / 28%);
+        transform: translateX(-50%);
+      }
+
+      .delete-reminder {
+        position: absolute;
+        top: 0.4rem;
+        right: 0.65rem;
+        border: 0;
+        background: transparent;
+        color: var(--indigo);
+        cursor: pointer;
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+
+      .reminder-form {
+        width: 100%;
+        max-width: 560px;
+        margin: 2rem auto 0;
+        padding: 1.5rem;
+        border: 2px solid var(--board-edge);
+        border-radius: 1rem;
+        text-align: left;
+      }
+
+      .reminder-form label {
+        display: block;
+        margin-bottom: 0.4rem;
+        font-weight: 700;
+      }
+
+      .reminder-form input,
+      .reminder-form textarea,
+      .reminder-form select {
+        width: 100%;
+        margin-bottom: 1rem;
+        padding: 0.7rem;
+        border: 1px solid var(--board-edge);
+        border-radius: 0.35rem;
+        background: #ffffff;
+        color: var(--indigo);
+        font: inherit;
+      }
+
+      .reminder-form select {
+        min-height: 44px;
+      }
+
+      .subject-legend {
+        margin: 0 0 1rem;
+      }
+
+      .subject-legend h3 {
+        margin: 0 0 0.6rem;
+        font-size: 0.9rem;
+      }
+
+      .subject-legend-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem 0.75rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .subject-legend-item {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+
+      .subject-color-dot {
+        width: 0.7rem;
+        height: 0.7rem;
+        flex: 0 0 0.7rem;
+        border: 1px solid rgb(0 28 200 / 18%);
+        border-radius: 50%;
+      }
+
+      .reminder-form textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+
+      .add-reminder {
+        padding: 0.7rem 1.5rem;
+        border: 0;
+        border-radius: 0.4rem;
+        background: var(--indigo);
+        color: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+      }
+
+      .form-status {
+        min-height: 1.5em;
+        margin-top: 0.75rem;
+        font-size: 0.9rem;
+      }
     </style>
   </head>
   <body class="min-h-screen">
-    <main class="mx-auto flex w-full max-w-[600px] flex-col items-center px-4 pb-12 pt-[15vh] text-center">
+    <main class="mx-auto flex w-full flex-col items-center px-4 pb-12 pt-[15vh] text-center">
       <header>
-        <a href="index.html" class="display-title text-6xl font-black uppercase text-[#20209b]">Track</a>
+        <a href="index.html" class="display-title text-6xl font-black uppercase text-[#001cc8]">Track</a>
         <h1 class="mt-8 text-2xl font-extrabold uppercase">Reminders</h1>
       </header>
-      <section aria-labelledby="page-content" class="mt-8 w-full">
-        <h2 id="page-content" class="sr-only">Reminders content</h2>
+
+      <section aria-labelledby="reminders-board-title" class="mt-8 w-full">
+        <h2 id="reminders-board-title" class="mb-8 text-xl font-extrabold uppercase">Your Reminders</h2>
+        <div id="reminder-board" class="reminder-board" aria-live="polite" aria-label="Reminder notes"></div>
+
+        <form id="reminder-form" class="reminder-form">
+          <h2 class="mb-5 text-xl font-extrabold uppercase">Add a Reminder</h2>
+          <label for="reminder-title">Title</label>
+          <input id="reminder-title" name="title" type="text" required />
+
+          <label for="reminder-subject">Subject</label>
+          <select id="reminder-subject" name="subject" required>
+            <option value="MATHEMATICS">MATHEMATICS</option>
+            <option value="SCIENCE">SCIENCE</option>
+            <option value="FILIPINO">FILIPINO</option>
+            <option value="ENGLISH">ENGLISH</option>
+            <option value="RVE">RVE</option>
+            <option value="AP">AP</option>
+            <option value="TLE">TLE</option>
+            <option value="MAPEH">MAPEH</option>
+            <option value="COMPUTER">COMPUTER</option>
+          </select>
+
+          <section class="subject-legend" aria-labelledby="subject-legend-title">
+            <h3 id="subject-legend-title">Subject Color Coding</h3>
+            <ul id="subject-legend-list" class="subject-legend-list"></ul>
+          </section>
+
+          <label for="reminder-details">Details</label>
+          <textarea id="reminder-details" name="details" placeholder="Add a few details (optional)"></textarea>
+
+          <button class="add-reminder" type="submit">Add</button>
+          <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
+        </form>
       </section>
-      <a href="index.html" class="mt-8 font-bold uppercase underline">Back to home</a>
+      <a href="index.html" class="mt-8 font-bold uppercase text-[#001cc8] underline">Back to home</a>
     </main>
+    <script>
+      const STORAGE_KEY = "track-reminders";
+      const reminderBoard = document.querySelector("#reminder-board");
+      const reminderForm = document.querySelector("#reminder-form");
+      const titleInput = document.querySelector("#reminder-title");
+      const subjectInput = document.querySelector("#reminder-subject");
+      const detailsInput = document.querySelector("#reminder-details");
+      const formStatus = document.querySelector("#form-status");
+      const subjectLegend = document.querySelector("#subject-legend-list");
+      const subjectColors = {
+        MATHEMATICS: "#1D4ED8",
+        SCIENCE: "#B91C1C",
+        FILIPINO: "#B45309",
+        ENGLISH: "#15803D",
+        RVE: "#000000",
+        AP: "#C000A0",
+        TLE: "#0369A1",
+        MAPEH: "#7C3AED",
+        COMPUTER: "#64748B",
+      };
+      let reminders = [];
+
+      function renderSubjectLegend() {
+        Object.entries(subjectColors).forEach(([subject, color]) => {
+          const item = document.createElement("li");
+          item.className = "subject-legend-item";
+
+          const dot = document.createElement("span");
+          dot.className = "subject-color-dot";
+          dot.style.backgroundColor = color;
+          dot.setAttribute("aria-hidden", "true");
+
+          item.append(dot, document.createTextNode(subject));
+          subjectLegend.append(item);
+        });
+      }
+
+      function setStatus(message) {
+        formStatus.textContent = message;
+      }
+
+      function saveReminders() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
+          setStatus("Reminders saved in this browser.");
+        } catch (error) {
+          setStatus("Could not save reminders in this browser. They will be lost when you leave this page.");
+          console.error("Unable to save reminders:", error);
+        }
+      }
+
+      function createReminderNote(reminder, index) {
+        const note = document.createElement("article");
+        note.className = `reminder-note ${index % 2 === 0 ? "note-odd" : "note-even"}`;
+
+        const pushpin = document.createElement("span");
+        pushpin.className = "pushpin";
+        pushpin.setAttribute("aria-hidden", "true");
+        pushpin.style.backgroundColor = subjectColors[reminder.subject];
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "delete-reminder";
+        deleteButton.type = "button";
+        deleteButton.dataset.deleteId = reminder.id;
+        deleteButton.setAttribute("aria-label", `Delete reminder: ${reminder.title}`);
+        deleteButton.textContent = "×";
+
+        const title = document.createElement("h3");
+        title.className = "text-lg font-extrabold uppercase";
+        title.textContent = reminder.title;
+        title.style.color = subjectColors[reminder.subject];
+
+        note.append(pushpin, deleteButton, title);
+        if (reminder.details) {
+          const details = document.createElement("p");
+          details.className = "mt-3 text-sm leading-relaxed";
+          details.textContent = reminder.details;
+          note.append(details);
+        }
+        return note;
+      }
+
+      function renderReminders() {
+        reminderBoard.replaceChildren();
+        if (reminders.length === 0) {
+          const emptyMessage = document.createElement("p");
+          emptyMessage.textContent = "Your board is empty. Add a reminder below.";
+          reminderBoard.append(emptyMessage);
+          return;
+        }
+        reminders.forEach((reminder, index) => {
+          reminderBoard.append(createReminderNote(reminder, index));
+        });
+      }
+
+      try {
+        const savedReminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        if (Array.isArray(savedReminders)) {
+          reminders = savedReminders.filter(
+            (reminder) =>
+              reminder &&
+              typeof reminder.id === "string" &&
+              typeof reminder.title === "string" &&
+              typeof reminder.details === "string",
+          );
+          reminders = reminders.map((reminder) => ({
+            ...reminder,
+            subject: Object.hasOwn(subjectColors, reminder.subject) ? reminder.subject : "MATHEMATICS",
+          }));
+        } else {
+          setStatus("Saved reminders could not be read because their data is invalid.");
+        }
+      } catch (error) {
+        setStatus("Could not load saved reminders from this browser.");
+        console.error("Unable to load reminders:", error);
+      }
+      renderSubjectLegend();
+      renderReminders();
+
+      reminderForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const title = titleInput.value.trim();
+        if (!title) {
+          titleInput.focus();
+          setStatus("Enter a title for your reminder.");
+          return;
+        }
+        reminders.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          title,
+          subject: subjectInput.value,
+          details: detailsInput.value.trim(),
+        });
+        renderReminders();
+        saveReminders();
+        reminderForm.reset();
+        subjectInput.value = "MATHEMATICS";
+        titleInput.focus();
+      });
+
+      reminderBoard.addEventListener("click", (event) => {
+        if (!(event.target instanceof Element)) return;
+        const deleteButton = event.target.closest("[data-delete-id]");
+        if (!deleteButton) return;
+        reminders = reminders.filter((reminder) => reminder.id !== deleteButton.dataset.deleteId);
+        renderReminders();
+        saveReminders();
+      });
+    </script>
   </body>
 </html>
