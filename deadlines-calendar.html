@@ -52,7 +52,7 @@
       .back-link:focus-visible,
       button:focus-visible,
       input:focus-visible,
-      select:focus-visible {
+      .subject-picker summary:focus-visible {
         outline: 3px solid var(--navy-light);
         outline-offset: 3px;
       }
@@ -87,6 +87,7 @@
 
       .task-panel,
       .calendar-panel {
+        min-width: 0;
         border: 2px solid var(--navy);
         border-radius: 14px;
         background: var(--paper);
@@ -110,7 +111,15 @@
 
       .task-form {
         display: grid;
+        min-width: 0;
         gap: 14px;
+      }
+
+      .task-form > div,
+      .task-form > button,
+      .task-form > section {
+        min-width: 0;
+        max-width: 100%;
       }
 
       .field-label {
@@ -120,9 +129,10 @@
         font-weight: 700;
       }
 
-      input,
-      select {
+      input {
         width: 100%;
+        min-width: 0;
+        max-width: 100%;
         min-height: 44px;
         padding: 10px 12px;
         border: 1px solid var(--navy-light);
@@ -132,8 +142,101 @@
         font: inherit;
       }
 
-      select {
-        appearance: none;
+      .subject-picker {
+        position: relative;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .subject-picker summary {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        min-height: 44px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid var(--navy-light);
+        border-radius: 8px;
+        background: var(--white);
+        cursor: pointer;
+        list-style: none;
+        overflow: hidden;
+      }
+
+      .subject-picker summary > span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .subject-picker summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .subject-picker summary::after {
+        content: "▾";
+        flex: 0 0 auto;
+      }
+
+      .subject-picker[open] summary {
+        border-color: var(--navy);
+        border-radius: 8px 8px 0 0;
+      }
+
+      .subject-options {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        display: grid;
+        gap: 2px;
+        max-height: 240px;
+        padding: 6px;
+        overflow-y: auto;
+        border: 1px solid var(--navy-light);
+        border-radius: 8px;
+        background: var(--white);
+        box-shadow: 0 6px 12px rgb(32 32 155 / 14%);
+      }
+
+      .subject-picker[open] .subject-options {
+        margin-top: 6px;
+      }
+
+      .subject-option {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 7px 6px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.84rem;
+      }
+
+      .subject-option:hover {
+        background: #f1eef9;
+      }
+
+      .subject-option input {
+        width: 16px;
+        min-height: 16px;
+        height: 16px;
+        flex: 0 0 16px;
+        margin: 0;
+        padding: 0;
+        accent-color: var(--navy);
+      }
+
+      .subject-swatch {
+        width: 12px;
+        height: 12px;
+        flex: 0 0 12px;
+        border: 1px solid rgb(32 32 155 / 18%);
+        border-radius: 50%;
       }
 
       input::placeholder {
@@ -190,6 +293,195 @@
         flex: 0 0 12px;
         border: 1px solid rgb(32 32 155 / 18%);
         border-radius: 50%;
+      }
+
+      .task-subjects {
+        display: block;
+        margin-top: 3px;
+        font-size: 0.62rem;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+
+      .deadline-dialog {
+        width: min(100% - 32px, 520px);
+        max-width: 520px;
+        max-height: min(calc(100dvh - 32px), 720px);
+        margin: auto;
+        padding: 0;
+        overflow: visible;
+        border: 0;
+        border-radius: 14px;
+        background: transparent;
+        color: var(--navy);
+      }
+
+      .deadline-dialog::backdrop {
+        background: rgb(15 15 48 / 56%);
+        backdrop-filter: blur(2px);
+      }
+
+      .deadline-dialog-panel {
+        display: grid;
+        max-height: min(calc(100dvh - 32px), 720px);
+        gap: 20px;
+        padding: clamp(20px, 5vw, 30px);
+        overflow-y: auto;
+        border: 2px solid var(--navy);
+        border-radius: 14px;
+        background: var(--paper);
+        box-shadow: 0 20px 60px rgb(0 0 0 / 24%);
+      }
+
+      .deadline-dialog-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: start;
+        gap: 12px;
+        margin: 0;
+        text-align: left;
+      }
+
+      .deadline-dialog-date {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        margin: 9px 0 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-align: right;
+      }
+
+      .deadline-dialog-date-text {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .deadline-date-edit-button {
+        min-width: 32px;
+        min-height: 32px;
+        padding: 6px;
+      }
+
+      .deadline-dialog-title-row {
+        grid-column: 1;
+        grid-row: 1;
+        display: flex;
+        min-width: 0;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .deadline-dialog-title {
+        min-width: 0;
+        margin: 0;
+        overflow-wrap: anywhere;
+        font-size: clamp(1.25rem, 5vw, 1.65rem);
+        line-height: 1.2;
+      }
+
+      .icon-button {
+        display: inline-flex;
+        min-width: 38px;
+        min-height: 38px;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+      }
+
+      .deadline-dialog-close {
+        grid-column: 3;
+        grid-row: 1;
+        min-width: 38px;
+        min-height: 38px;
+        padding: 4px;
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+
+      .deadline-edit-form {
+        display: grid;
+        gap: 10px;
+      }
+
+      .deadline-edit-form[hidden],
+      .deadline-date-form[hidden],
+      .deadline-delete-confirmation[hidden] {
+        display: none;
+      }
+
+      .deadline-dialog-actions,
+      .deadline-edit-actions,
+      .deadline-delete-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .deadline-subject-heading {
+        margin: 0 0 10px;
+        font-size: 0.92rem;
+      }
+
+      .deadline-subject-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .deadline-subject-tag {
+        max-width: 100%;
+        padding: 7px 10px;
+        overflow-wrap: anywhere;
+        border: 1px solid rgb(32 32 155 / 18%);
+        border-radius: 999px;
+        background: var(--subject-color);
+        color: #ffffff;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .deadline-subject-tag.is-rainbow {
+        color: #20209b;
+      }
+
+      .deadline-delete-button {
+        background: #b42318;
+        color: #ffffff;
+      }
+
+      .deadline-delete-button:hover {
+        background: #8f1c13;
+      }
+
+      .deadline-delete-confirmation {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid #e5a29d;
+        border-radius: 10px;
+        background: #fff1f0;
+      }
+
+      .deadline-delete-confirmation p {
+        margin: 0;
+        color: #7a271a;
+        font-size: 0.92rem;
+        line-height: 1.45;
+      }
+
+      .deadline-dialog-status {
+        min-height: 1.25em;
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.88rem;
       }
 
       .calendar-panel {
@@ -359,6 +651,23 @@
           padding: 2px;
           font-size: 0.66rem;
         }
+
+        .deadline-dialog-header {
+          grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .deadline-dialog-date {
+          grid-column: 1;
+          grid-row: 2;
+          justify-content: flex-start;
+          margin: 0;
+          text-align: left;
+        }
+
+        .deadline-dialog-close {
+          grid-column: 2;
+          grid-row: 1;
+        }
       }
     </style>
   </head>
@@ -388,18 +697,13 @@
               />
             </div>
             <div>
-              <label class="field-label" for="task-subject">Subject</label>
-              <select id="task-subject" name="subject" required>
-                <option value="MATHEMATICS">MATHEMATICS</option>
-                <option value="SCIENCE">SCIENCE</option>
-                <option value="FILIPINO">FILIPINO</option>
-                <option value="ENGLISH">ENGLISH</option>
-                <option value="RVE">RVE</option>
-                <option value="AP">AP</option>
-                <option value="TLE">TLE</option>
-                <option value="MAPEH">MAPEH</option>
-                <option value="COMPUTER">COMPUTER</option>
-              </select>
+              <span class="field-label" id="task-subject-label">Subjects</span>
+              <details class="subject-picker" id="task-subject-picker">
+                <summary id="task-subject-summary">
+                  <span id="task-subject-selection">Select subjects</span>
+                </summary>
+                <div class="subject-options" id="task-subject-options" role="group" aria-labelledby="task-subject-label"></div>
+              </details>
             </div>
             <div>
               <label class="field-label" for="task-date">Date</label>
@@ -427,18 +731,99 @@
           <div class="calendar-grid" id="calendar-grid" role="grid" aria-labelledby="month-heading"></div>
         </section>
       </div>
+
+      <dialog class="deadline-dialog" id="deadline-dialog" aria-labelledby="deadline-dialog-title">
+        <div class="deadline-dialog-panel">
+          <header class="deadline-dialog-header">
+            <div class="deadline-dialog-title-row">
+              <h2 class="deadline-dialog-title" id="deadline-dialog-title"></h2>
+              <button class="icon-button" id="deadline-edit-button" type="button" aria-label="Edit deadline name" title="Edit deadline name">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="deadline-dialog-date">
+              <p class="deadline-dialog-date-text" id="deadline-dialog-date"></p>
+              <button class="deadline-date-edit-button" id="deadline-date-edit-button" type="button" aria-label="Change deadline date" title="Change deadline date">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                  <path d="M16 2v4M8 2v4M3 10h18"></path>
+                </svg>
+              </button>
+            </div>
+            <button class="deadline-dialog-close" id="deadline-dialog-close" type="button" aria-label="Close deadline details">×</button>
+          </header>
+
+          <form class="deadline-edit-form" id="deadline-edit-form" hidden>
+            <label class="field-label" for="deadline-edit-name">Deadline name</label>
+            <input id="deadline-edit-name" type="text" maxlength="160" required />
+            <div class="deadline-edit-actions">
+              <button type="submit">Save changes</button>
+              <button id="deadline-edit-cancel" type="button">Cancel</button>
+            </div>
+          </form>
+
+          <form class="deadline-date-form" id="deadline-date-form" hidden>
+            <label class="field-label" for="deadline-edit-date">Deadline date</label>
+            <input id="deadline-edit-date" type="date" required />
+            <div class="deadline-edit-actions">
+              <button type="submit">Save date</button>
+              <button id="deadline-date-cancel" type="button">Cancel</button>
+            </div>
+          </form>
+
+          <section aria-labelledby="deadline-dialog-subject-heading">
+            <h3 class="deadline-subject-heading" id="deadline-dialog-subject-heading">Subjects</h3>
+            <div class="deadline-subject-tags" id="deadline-dialog-subjects"></div>
+          </section>
+
+          <div class="deadline-dialog-actions" id="deadline-dialog-actions">
+            <button class="deadline-delete-button" id="deadline-delete-button" type="button">Delete Deadline</button>
+          </div>
+
+          <section class="deadline-delete-confirmation" id="deadline-delete-confirmation" hidden aria-label="Confirm deadline deletion">
+            <p>Delete this deadline? This will remove it from the shared calendar for everyone.</p>
+            <div class="deadline-delete-actions">
+              <button class="deadline-delete-button" id="deadline-delete-confirm" type="button">Yes, delete</button>
+              <button id="deadline-delete-cancel" type="button">Cancel</button>
+            </div>
+          </section>
+
+          <p class="deadline-dialog-status" id="deadline-dialog-status" role="status" aria-live="polite"></p>
+        </div>
+      </dialog>
     </main>
 
     <script type="module">
-      import { createSharedStore } from "./shared-store.js";
+      import {
+        createSharedStore,
+        getSubjectBackground,
+        getSubjectList as normalizeSubjectList,
+        getSubjectMap,
+      } from "./shared-store.js";
 
       const calendarGrid = document.querySelector("#calendar-grid");
       const monthHeading = document.querySelector("#month-heading");
       const taskForm = document.querySelector("#task-form");
       const descriptionInput = document.querySelector("#task-description");
-      const subjectInput = document.querySelector("#task-subject");
+      const subjectOptions = document.querySelector("#task-subject-options");
+      const subjectSelection = document.querySelector("#task-subject-selection");
       const dateInput = document.querySelector("#task-date");
       const formStatus = document.querySelector("#form-status");
+      const deadlineDialog = document.querySelector("#deadline-dialog");
+      const deadlineDialogDate = document.querySelector("#deadline-dialog-date");
+      const deadlineDialogTitle = document.querySelector("#deadline-dialog-title");
+      const deadlineDialogSubjects = document.querySelector("#deadline-dialog-subjects");
+      const deadlineDialogStatus = document.querySelector("#deadline-dialog-status");
+      const deadlineEditButton = document.querySelector("#deadline-edit-button");
+      const deadlineEditForm = document.querySelector("#deadline-edit-form");
+      const deadlineEditName = document.querySelector("#deadline-edit-name");
+      const deadlineDateEditButton = document.querySelector("#deadline-date-edit-button");
+      const deadlineDateForm = document.querySelector("#deadline-date-form");
+      const deadlineEditDate = document.querySelector("#deadline-edit-date");
+      const deadlineDeleteConfirmation = document.querySelector("#deadline-delete-confirmation");
       const storageKey = "track-school-calendar-tasks";
       const subjectColors = {
         MATHEMATICS: "#1D4ED8",
@@ -450,14 +835,60 @@
         TLE: "#0369A1",
         MAPEH: "#7C3AED",
         COMPUTER: "#64748B",
+        HOMEROOM: "linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #6366f1, #a855f7)",
       };
+      const rainbowBands = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#6366f1", "#a855f7"];
       let tasks = [];
       let sharedStore = null;
+      let activeDeadlineId = null;
+      let dialogTrigger = null;
       const today = new Date();
       let displayedYear = today.getFullYear();
       let displayedMonth = today.getMonth();
 
       const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+      function getSubjectList(record) {
+        return normalizeSubjectList(record, subjectColors);
+      }
+
+      function renderSubjectPicker() {
+        Object.keys(subjectColors).forEach((subject) => {
+          const label = document.createElement("label");
+          label.className = "subject-option";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.name = "subjects";
+          checkbox.value = subject;
+          checkbox.defaultChecked = subject === "MATHEMATICS";
+          checkbox.checked = checkbox.defaultChecked;
+          checkbox.addEventListener("change", updateSubjectSummary);
+
+          const swatch = document.createElement("span");
+          swatch.className = "subject-swatch";
+          swatch.style.background = subjectColors[subject];
+          swatch.setAttribute("aria-hidden", "true");
+
+          label.append(checkbox, swatch, document.createTextNode(subject));
+          subjectOptions.append(label);
+        });
+        updateSubjectSummary();
+      }
+
+      function getSelectedSubjects() {
+        return [...subjectOptions.querySelectorAll('input[name="subjects"]:checked')]
+          .map((checkbox) => checkbox.value);
+      }
+
+      function updateSubjectSummary() {
+        const selected = getSelectedSubjects();
+        subjectSelection.textContent = selected.length
+          ? selected.length > 2
+            ? `${selected.slice(0, 2).join(", ")} +${selected.length - 2} more`
+            : selected.join(", ")
+          : "Select subjects";
+      }
 
       function renderColorLegend() {
         const legend = document.querySelector("#color-legend");
@@ -467,7 +898,7 @@
 
           item.className = "legend-item";
           dot.className = "legend-dot";
-          dot.style.backgroundColor = color;
+          dot.style.background = color;
           dot.setAttribute("aria-hidden", "true");
           item.append(dot, document.createTextNode(subject));
           legend.append(item);
@@ -477,6 +908,202 @@
       function formatDateKey(year, month, day) {
         return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       }
+
+      function formatDeadlineDate(dateKey) {
+        const [year, month, day] = dateKey.split("-").map(Number);
+        return new Intl.DateTimeFormat(undefined, {
+          dateStyle: "full",
+        }).format(new Date(year, month - 1, day));
+      }
+
+      function renderDeadlineDialog(task) {
+        deadlineDialogDate.textContent = formatDeadlineDate(task.date);
+        deadlineDialogTitle.textContent = task.description;
+        deadlineDialogSubjects.replaceChildren();
+
+        getSubjectList(task).forEach((subject) => {
+          const tag = document.createElement("span");
+          tag.className = "deadline-subject-tag";
+          tag.textContent = subject;
+          tag.style.setProperty("--subject-color", subjectColors[subject]);
+          if (subject === "HOMEROOM") tag.classList.add("is-rainbow");
+          deadlineDialogSubjects.append(tag);
+        });
+      }
+
+      function openDeadlineDialog(taskId, trigger) {
+        const task = tasks.find((item) => item.id === taskId);
+        if (!task) return;
+        activeDeadlineId = taskId;
+        dialogTrigger = trigger;
+        deadlineDialogStatus.textContent = "";
+        deadlineEditForm.hidden = true;
+        deadlineDateForm.hidden = true;
+        deadlineEditButton.disabled = false;
+        deadlineDateEditButton.disabled = false;
+        deadlineDeleteConfirmation.hidden = true;
+        document.querySelector("#deadline-dialog-actions").hidden = false;
+        renderDeadlineDialog(task);
+        deadlineDialog.showModal();
+        document.querySelector("#deadline-dialog-close").focus();
+      }
+
+      function closeDeadlineDialog() {
+        if (deadlineDialog.open) deadlineDialog.close();
+      }
+
+      deadlineDialog.addEventListener("click", (event) => {
+        if (event.target === deadlineDialog) closeDeadlineDialog();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && deadlineDialog.open) {
+          event.preventDefault();
+          closeDeadlineDialog();
+        }
+      });
+
+      deadlineDialog.addEventListener("close", () => {
+        activeDeadlineId = null;
+        deadlineEditForm.hidden = true;
+        deadlineDateForm.hidden = true;
+        deadlineEditButton.disabled = false;
+        deadlineDateEditButton.disabled = false;
+        deadlineDeleteConfirmation.hidden = true;
+        document.querySelector("#deadline-dialog-actions").hidden = false;
+        if (dialogTrigger?.isConnected) dialogTrigger.focus();
+        dialogTrigger = null;
+      });
+
+      document.querySelector("#deadline-dialog-close").addEventListener("click", closeDeadlineDialog);
+
+      deadlineEditButton.addEventListener("click", () => {
+        const task = tasks.find((item) => item.id === activeDeadlineId);
+        if (!task) return;
+        deadlineDialogStatus.textContent = "";
+        deadlineDateForm.hidden = true;
+        deadlineDateEditButton.disabled = false;
+        deadlineEditName.value = task.description;
+        deadlineEditForm.hidden = false;
+        deadlineEditButton.disabled = true;
+        deadlineEditName.focus();
+      });
+
+      deadlineDateEditButton.addEventListener("click", () => {
+        const task = tasks.find((item) => item.id === activeDeadlineId);
+        if (!task) return;
+        deadlineDialogStatus.textContent = "";
+        deadlineEditForm.hidden = true;
+        deadlineEditButton.disabled = false;
+        deadlineEditDate.value = task.date;
+        deadlineDateForm.hidden = false;
+        deadlineDateEditButton.disabled = true;
+        deadlineEditDate.focus();
+      });
+
+      document.querySelector("#deadline-edit-cancel").addEventListener("click", () => {
+        deadlineEditForm.hidden = true;
+        deadlineEditButton.disabled = false;
+        deadlineDialogStatus.textContent = "";
+        deadlineEditButton.focus();
+      });
+
+      document.querySelector("#deadline-date-cancel").addEventListener("click", () => {
+        deadlineDateForm.hidden = true;
+        deadlineDateEditButton.disabled = false;
+        deadlineDialogStatus.textContent = "";
+        deadlineDateEditButton.focus();
+      });
+
+      deadlineEditForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const description = deadlineEditName.value.trim();
+        if (!description) {
+          deadlineDialogStatus.textContent = "Deadline name cannot be empty.";
+          deadlineEditName.focus();
+          return;
+        }
+        if (description.length > 160) {
+          deadlineDialogStatus.textContent = "Deadline name must be 160 characters or fewer.";
+          deadlineEditName.focus();
+          return;
+        }
+        if (!sharedStore || !activeDeadlineId) {
+          deadlineDialogStatus.textContent = "Shared sync is not available. Try again after reconnecting.";
+          return;
+        }
+
+        try {
+          await sharedStore.update("deadlines", activeDeadlineId, { description });
+          const task = tasks.find((item) => item.id === activeDeadlineId);
+          if (task) renderDeadlineDialog({ ...task, description });
+          deadlineEditForm.hidden = true;
+          deadlineEditButton.disabled = false;
+          deadlineDialogStatus.textContent = "Deadline name updated.";
+          deadlineEditButton.focus();
+        } catch (error) {
+          deadlineDialogStatus.textContent = `Could not update deadline: ${error.message}`;
+          console.error("Unable to update shared deadline:", error);
+        }
+      });
+
+      deadlineDateForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const date = deadlineEditDate.value;
+        if (!date) {
+          deadlineDialogStatus.textContent = "Choose a date for this deadline.";
+          deadlineEditDate.focus();
+          return;
+        }
+        if (!sharedStore || !activeDeadlineId) {
+          deadlineDialogStatus.textContent = "Shared sync is not available. Try again after reconnecting.";
+          return;
+        }
+
+        try {
+          await sharedStore.update("deadlines", activeDeadlineId, { date });
+          const task = tasks.find((item) => item.id === activeDeadlineId);
+          if (task) renderDeadlineDialog({ ...task, date });
+          deadlineDateForm.hidden = true;
+          deadlineDateEditButton.disabled = false;
+          deadlineDialogStatus.textContent = "Deadline date updated.";
+          deadlineDateEditButton.focus();
+        } catch (error) {
+          deadlineDialogStatus.textContent = `Could not update deadline date: ${error.message}`;
+          console.error("Unable to update shared deadline date:", error);
+        }
+      });
+
+      document.querySelector("#deadline-delete-button").addEventListener("click", () => {
+        deadlineDialogStatus.textContent = "";
+        deadlineDeleteConfirmation.hidden = false;
+        document.querySelector("#deadline-dialog-actions").hidden = true;
+        document.querySelector("#deadline-delete-confirm").focus();
+      });
+
+      document.querySelector("#deadline-delete-cancel").addEventListener("click", () => {
+        deadlineDeleteConfirmation.hidden = true;
+        document.querySelector("#deadline-dialog-actions").hidden = false;
+        deadlineDialogStatus.textContent = "";
+        document.querySelector("#deadline-delete-button").focus();
+      });
+
+      document.querySelector("#deadline-delete-confirm").addEventListener("click", async () => {
+        if (!sharedStore || !activeDeadlineId) {
+          deadlineDialogStatus.textContent = "Shared sync is not available. Try again after reconnecting.";
+          return;
+        }
+
+        const taskId = activeDeadlineId;
+        try {
+          await sharedStore.delete("deadlines", taskId);
+          closeDeadlineDialog();
+          formStatus.textContent = "Deadline deleted from the shared calendar.";
+        } catch (error) {
+          deadlineDialogStatus.textContent = `Could not delete deadline: ${error.message}`;
+          console.error("Unable to delete shared deadline:", error);
+        }
+      });
 
       function loadLegacyTasks() {
         try {
@@ -492,7 +1119,7 @@
                 Number.isInteger(task.id) &&
                 typeof task.description === "string" &&
                 typeof task.date === "string" &&
-                Object.hasOwn(subjectColors, task.subject),
+                getSubjectList(task).length > 0,
             )
           ) {
             throw new Error("Saved calendar tasks have an invalid format.");
@@ -502,52 +1129,6 @@
         } catch (error) {
           formStatus.textContent = `Could not load saved tasks: ${error.message}`;
           return [];
-        }
-      }
-
-      async function handleTaskAction(taskId) {
-        const task = tasks.find((item) => item.id === taskId);
-        if (!task) return;
-        if (!sharedStore) {
-          formStatus.textContent = "Shared sync is not configured. Follow FIREBASE_SETUP.md.";
-          return;
-        }
-
-        const response = window.prompt(
-          "What would you like to do with this task? Type 'delete' to remove it, or type new text to edit it:",
-          task.description,
-        );
-        if (response === null) return;
-
-        if (response.trim().toLowerCase() === "delete") {
-          try {
-            await sharedStore.delete("deadlines", taskId);
-            formStatus.textContent = "Task deleted from the shared calendar.";
-          } catch (error) {
-            formStatus.textContent = `Could not delete task: ${error.message}`;
-            console.error("Unable to delete shared task:", error);
-          }
-          return;
-        }
-
-        const updatedDescription = response.trim();
-        if (!updatedDescription) {
-          formStatus.textContent = "Task description cannot be empty.";
-          return;
-        }
-        if (updatedDescription.length > 160) {
-          formStatus.textContent = "Task description must be 160 characters or fewer.";
-          return;
-        }
-
-        try {
-          await sharedStore.update("deadlines", taskId, {
-            description: updatedDescription,
-          });
-          formStatus.textContent = "Task updated in the shared calendar.";
-        } catch (error) {
-          formStatus.textContent = `Could not update task: ${error.message}`;
-          console.error("Unable to update shared task:", error);
         }
       }
 
@@ -620,15 +1201,25 @@
 
               taskButton.className = "task-badge";
               taskButton.type = "button";
-              taskButton.textContent = task.description;
-              taskButton.style.backgroundColor = subjectColors[task.subject];
-              taskButton.style.setProperty("--badge-color", subjectColors[task.subject]);
+              const taskSubjects = getSubjectList(task);
+              taskButton.style.background = getSubjectBackground(
+                taskSubjects,
+                subjectColors,
+                rainbowBands,
+              );
+              taskButton.style.setProperty("--badge-color", subjectColors[taskSubjects[0]]);
               taskButton.setAttribute(
                 "aria-label",
-                `${task.subject} task: ${task.description}. Select to edit or delete.`,
+                `${taskSubjects.join(", ")} deadline: ${task.description}. Select to edit or delete.`,
               );
+              const description = document.createElement("span");
+              description.textContent = task.description;
+              const subjects = document.createElement("span");
+              subjects.className = "task-subjects";
+              subjects.textContent = taskSubjects.join(" · ");
+              taskButton.append(description, subjects);
               taskButton.addEventListener("click", () => {
-                void handleTaskAction(task.id);
+                openDeadlineDialog(task.id, taskButton);
               });
 
               item.append(taskButton);
@@ -650,6 +1241,12 @@
           formStatus.textContent = "Enter a task description and choose a date.";
           return;
         }
+        const subjects = getSelectedSubjects();
+        if (subjects.length === 0) {
+          formStatus.textContent = "Select at least one subject.";
+          document.querySelector("#task-subject-summary").focus();
+          return;
+        }
 
         if (!sharedStore) {
           formStatus.textContent = "Shared sync is not configured. Follow FIREBASE_SETUP.md.";
@@ -659,12 +1256,12 @@
         try {
           await sharedStore.add("deadlines", {
             description,
-            subject: subjectInput.value,
+            subjects: getSubjectMap(subjects),
             date: dateInput.value,
           });
           formStatus.textContent = "Task added to the shared calendar.";
           taskForm.reset();
-          subjectInput.value = "MATHEMATICS";
+          updateSubjectSummary();
           dateInput.value = formatDateKey(
             today.getFullYear(),
             today.getMonth(),
@@ -700,6 +1297,7 @@
         today.getMonth(),
         today.getDate(),
       );
+      renderSubjectPicker();
       renderColorLegend();
       renderCalendar();
 
@@ -714,8 +1312,9 @@
                 typeof task.id === "string" &&
                 typeof task.description === "string" &&
                 typeof task.date === "string" &&
-                Object.hasOwn(subjectColors, task.subject),
-            );
+                getSubjectList(task).length > 0,
+            )
+              .map((task) => ({ ...task, subjects: getSubjectMap(getSubjectList(task)) }));
             renderCalendar();
             formStatus.textContent = "Connected to the live shared calendar.";
           },

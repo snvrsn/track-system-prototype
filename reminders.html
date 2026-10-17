@@ -82,6 +82,13 @@
         transform: translateX(-50%);
       }
 
+      .reminder-subjects {
+        margin: 0.65rem 0 0;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.035em;
+      }
+
       .delete-reminder {
         position: absolute;
         top: 0.4rem;
@@ -110,9 +117,8 @@
         font-weight: 700;
       }
 
-      .reminder-form input,
-      .reminder-form textarea,
-      .reminder-form select {
+      .reminder-form input:not([type="checkbox"]),
+      .reminder-form textarea {
         width: 100%;
         margin-bottom: 1rem;
         padding: 0.7rem;
@@ -123,8 +129,88 @@
         font: inherit;
       }
 
-      .reminder-form select {
+      .subject-picker {
+        position: relative;
+        margin-bottom: 1rem;
+      }
+
+      .subject-picker summary {
+        display: flex;
         min-height: 44px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 0.7rem;
+        border: 1px solid var(--board-edge);
+        border-radius: 0.35rem;
+        background: #ffffff;
+        cursor: pointer;
+        list-style: none;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      .subject-picker summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .subject-picker summary::after {
+        content: "▾";
+        flex: 0 0 auto;
+      }
+
+      .subject-picker[open] summary {
+        border-radius: 0.35rem 0.35rem 0 0;
+      }
+
+      .subject-options {
+        position: absolute;
+        z-index: 2;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: grid;
+        gap: 2px;
+        max-height: 240px;
+        padding: 6px;
+        overflow-y: auto;
+        border: 1px solid var(--board-edge);
+        border-top: 0;
+        border-radius: 0 0 0.35rem 0.35rem;
+        background: #ffffff;
+        box-shadow: 0 6px 12px rgb(0 0 0 / 14%);
+      }
+
+      .subject-option {
+        display: flex !important;
+        align-items: center;
+        gap: 9px;
+        margin: 0 !important;
+        padding: 7px 6px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.84rem;
+      }
+
+      .subject-option:hover {
+        background: #f1eef9;
+      }
+
+      .subject-option input {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 16px;
+        margin: 0;
+        accent-color: var(--indigo);
+      }
+
+      .subject-swatch {
+        width: 12px;
+        height: 12px;
+        flex: 0 0 12px;
+        border: 1px solid rgb(0 28 200 / 18%);
+        border-radius: 50%;
       }
 
       .subject-legend {
@@ -201,18 +287,13 @@
           <label for="reminder-title">Title</label>
           <input id="reminder-title" name="title" type="text" maxlength="160" required />
 
-          <label for="reminder-subject">Subject</label>
-          <select id="reminder-subject" name="subject" required>
-            <option value="MATHEMATICS">MATHEMATICS</option>
-            <option value="SCIENCE">SCIENCE</option>
-            <option value="FILIPINO">FILIPINO</option>
-            <option value="ENGLISH">ENGLISH</option>
-            <option value="RVE">RVE</option>
-            <option value="AP">AP</option>
-            <option value="TLE">TLE</option>
-            <option value="MAPEH">MAPEH</option>
-            <option value="COMPUTER">COMPUTER</option>
-          </select>
+          <span id="reminder-subject-label" class="mb-2 block font-bold">Subjects</span>
+          <details class="subject-picker" id="reminder-subject-picker">
+            <summary id="reminder-subject-summary">
+              Select subjects
+            </summary>
+            <div class="subject-options" id="reminder-subject-options" role="group" aria-labelledby="reminder-subject-label"></div>
+          </details>
 
           <section class="subject-legend" aria-labelledby="subject-legend-title">
             <h3 id="subject-legend-title">Subject Color Coding</h3>
@@ -229,13 +310,19 @@
       <a href="index.html" class="mt-8 font-bold uppercase text-[#001cc8] underline">Back to home</a>
     </main>
     <script type="module">
-      import { createSharedStore } from "./shared-store.js";
+      import {
+        createSharedStore,
+        getSubjectBackground,
+        getSubjectList as normalizeSubjectList,
+        getSubjectMap,
+      } from "./shared-store.js";
 
       const STORAGE_KEY = "track-reminders";
       const reminderBoard = document.querySelector("#reminder-board");
       const reminderForm = document.querySelector("#reminder-form");
       const titleInput = document.querySelector("#reminder-title");
-      const subjectInput = document.querySelector("#reminder-subject");
+      const subjectOptions = document.querySelector("#reminder-subject-options");
+      const subjectSummary = document.querySelector("#reminder-subject-summary");
       const detailsInput = document.querySelector("#reminder-details");
       const formStatus = document.querySelector("#form-status");
       const subjectLegend = document.querySelector("#subject-legend-list");
@@ -249,8 +336,50 @@
         TLE: "#0369A1",
         MAPEH: "#7C3AED",
         COMPUTER: "#64748B",
+        HOMEROOM: "linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #6366f1, #a855f7)",
       };
+      const rainbowBands = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#6366f1", "#a855f7"];
       let reminders = [];
+
+      function getSubjectList(record) {
+        return normalizeSubjectList(record, subjectColors);
+      }
+
+      function renderSubjectPicker() {
+        Object.keys(subjectColors).forEach((subject) => {
+          const label = document.createElement("label");
+          label.className = "subject-option";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.name = "subjects";
+          checkbox.value = subject;
+          checkbox.defaultChecked = subject === "MATHEMATICS";
+          checkbox.checked = checkbox.defaultChecked;
+          checkbox.addEventListener("change", updateSubjectSummary);
+
+          const swatch = document.createElement("span");
+          swatch.className = "subject-swatch";
+          swatch.style.background = subjectColors[subject];
+          swatch.setAttribute("aria-hidden", "true");
+
+          label.append(checkbox, swatch, document.createTextNode(subject));
+          subjectOptions.append(label);
+        });
+        updateSubjectSummary();
+      }
+
+      function getSelectedSubjects() {
+        return [...subjectOptions.querySelectorAll('input[name="subjects"]:checked')]
+          .map((checkbox) => checkbox.value);
+      }
+
+      function updateSubjectSummary() {
+        const selected = getSelectedSubjects();
+        subjectSummary.textContent = selected.length
+          ? selected.join(", ")
+          : "Select subjects";
+      }
 
       function renderSubjectLegend() {
         Object.entries(subjectColors).forEach(([subject, color]) => {
@@ -259,7 +388,7 @@
 
           const dot = document.createElement("span");
           dot.className = "subject-color-dot";
-          dot.style.backgroundColor = color;
+          dot.style.background = color;
           dot.setAttribute("aria-hidden", "true");
 
           item.append(dot, document.createTextNode(subject));
@@ -286,12 +415,15 @@
                 typeof reminder.title === "string" &&
                 typeof reminder.details === "string",
             )
-            .map((reminder) => ({
-              ...reminder,
-              subject: Object.hasOwn(subjectColors, reminder.subject)
-                ? reminder.subject
-                : "MATHEMATICS",
-            }));
+            .map((reminder) => {
+              const legacyReminder = { ...reminder };
+              delete legacyReminder.subject;
+              const subjects = getSubjectList(reminder);
+              return {
+                ...legacyReminder,
+                subjects: getSubjectMap(subjects.length ? subjects : ["MATHEMATICS"]),
+              };
+            });
         } catch (error) {
           setStatus(`Could not load saved reminders: ${error.message}`);
           console.error("Unable to load legacy reminders:", error);
@@ -306,7 +438,12 @@
         const pushpin = document.createElement("span");
         pushpin.className = "pushpin";
         pushpin.setAttribute("aria-hidden", "true");
-        pushpin.style.backgroundColor = subjectColors[reminder.subject];
+        const subjects = getSubjectList(reminder);
+        pushpin.style.background = getSubjectBackground(
+          subjects,
+          subjectColors,
+          rainbowBands,
+        );
 
         const deleteButton = document.createElement("button");
         deleteButton.className = "delete-reminder";
@@ -318,9 +455,13 @@
         const title = document.createElement("h3");
         title.className = "text-lg font-extrabold uppercase";
         title.textContent = reminder.title;
-        title.style.color = subjectColors[reminder.subject];
+        title.style.color = subjectColors[subjects[0]];
 
         note.append(pushpin, deleteButton, title);
+        const subjectNames = document.createElement("p");
+        subjectNames.className = "reminder-subjects";
+        subjectNames.textContent = subjects.join(" · ");
+        note.append(subjectNames);
         if (reminder.details) {
           const details = document.createElement("p");
           details.className = "mt-3 text-sm leading-relaxed";
@@ -344,6 +485,7 @@
       }
 
       renderSubjectLegend();
+      renderSubjectPicker();
       renderReminders();
 
       let sharedStore = null;
@@ -358,8 +500,12 @@
                 typeof reminder.id === "string" &&
                 typeof reminder.title === "string" &&
                 typeof reminder.details === "string" &&
-                Object.hasOwn(subjectColors, reminder.subject),
-            );
+                getSubjectList(reminder).length > 0,
+            )
+            .map((reminder) => ({
+              ...reminder,
+              subjects: getSubjectMap(getSubjectList(reminder)),
+            }));
             renderReminders();
             setStatus("Connected to live shared reminders.");
           },
@@ -392,6 +538,13 @@
           return;
         }
 
+        const subjects = getSelectedSubjects();
+        if (subjects.length === 0) {
+          setStatus("Select at least one subject.");
+          subjectSummary.focus();
+          return;
+        }
+
         if (!sharedStore) {
           setStatus("Shared sync is not configured. Follow FIREBASE_SETUP.md.");
           return;
@@ -400,12 +553,12 @@
         try {
           await sharedStore.add("reminders", {
             title,
-            subject: subjectInput.value,
+            subjects: getSubjectMap(subjects),
             details: detailsInput.value.trim(),
           });
           setStatus("Reminder added to the shared board.");
           reminderForm.reset();
-          subjectInput.value = "MATHEMATICS";
+          updateSubjectSummary();
           titleInput.focus();
         } catch (error) {
           setStatus(`Could not add reminder: ${error.message}`);
