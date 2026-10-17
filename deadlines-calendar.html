@@ -429,7 +429,9 @@
       </div>
     </main>
 
-    <script>
+    <script type="module">
+      import { createSharedStore } from "./shared-store.js";
+
       const calendarGrid = document.querySelector("#calendar-grid");
       const monthHeading = document.querySelector("#month-heading");
       const taskForm = document.querySelector("#task-form");
@@ -449,8 +451,8 @@
         MAPEH: "#7C3AED",
         COMPUTER: "#64748B",
       };
-      let nextTaskId = 1;
-      const tasks = loadTasks();
+      let tasks = [];
+      let sharedStore = null;
       const today = new Date();
       let displayedYear = today.getFullYear();
       let displayedMonth = today.getMonth();
@@ -476,7 +478,7 @@
         return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       }
 
-      function loadTasks() {
+      function loadLegacyTasks() {
         try {
           const storedTasks = localStorage.getItem(storageKey);
           if (!storedTasks) return [];
@@ -496,8 +498,6 @@
             throw new Error("Saved calendar tasks have an invalid format.");
           }
 
-          nextTaskId =
-            parsedTasks.reduce((maxId, task) => Math.max(maxId, task.id), 0) + 1;
           return parsedTasks;
         } catch (error) {
           formStatus.textContent = `Could not load saved tasks: ${error.message}`;
@@ -505,20 +505,13 @@
         }
       }
 
-      function saveTasks() {
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(tasks));
-          return true;
-        } catch (error) {
-          formStatus.textContent = `Could not save tasks: ${error.message}`;
-          return false;
+      async function handleTaskAction(taskId) {
+        const task = tasks.find((item) => item.id === taskId);
+        if (!task) return;
+        if (!sharedStore) {
+          formStatus.textContent = "Shared sync is not configured. Follow FIREBASE_SETUP.md.";
+          return;
         }
-      }
-
-      function handleTaskAction(taskId) {
-        const taskIndex = tasks.findIndex((task) => task.id === taskId);
-        if (taskIndex === -1) return;
-        const task = tasks[taskIndex];
 
         const response = window.prompt(
           "What would you like to do with this task? Type 'delete' to remove it, or type new text to edit it:",
@@ -527,14 +520,13 @@
         if (response === null) return;
 
         if (response.trim().toLowerCase() === "delete") {
-          const [deletedTask] = tasks.splice(taskIndex, 1);
-          if (!saveTasks()) {
-            tasks.splice(taskIndex, 0, deletedTask);
-            return;
+          try {
+            await sharedStore.delete("deadlines", taskId);
+            formStatus.textContent = "Task deleted from the shared calendar.";
+          } catch (error) {
+            formStatus.textContent = `Could not delete task: ${error.message}`;
+            console.error("Unable to delete shared task:", error);
           }
-
-          renderCalendar();
-          formStatus.textContent = "Task deleted.";
           return;
         }
 
@@ -543,16 +535,20 @@
           formStatus.textContent = "Task description cannot be empty.";
           return;
         }
-
-        const previousDescription = task.description;
-        task.description = updatedDescription;
-        if (!saveTasks()) {
-          task.description = previousDescription;
+        if (updatedDescription.length > 160) {
+          formStatus.textContent = "Task description must be 160 characters or fewer.";
           return;
         }
 
-        renderCalendar();
-        formStatus.textContent = "Task updated.";
+        try {
+          await sharedStore.update("deadlines", taskId, {
+            description: updatedDescription,
+          });
+          formStatus.textContent = "Task updated in the shared calendar.";
+        } catch (error) {
+          formStatus.textContent = `Could not update task: ${error.message}`;
+          console.error("Unable to update shared task:", error);
+        }
       }
 
       function renderCalendar() {
@@ -631,7 +627,9 @@
                 "aria-label",
                 `${task.subject} task: ${task.description}. Select to edit or delete.`,
               );
-              taskButton.addEventListener("click", () => handleTaskAction(task.id));
+              taskButton.addEventListener("click", () => {
+                void handleTaskAction(task.id);
+              });
 
               item.append(taskButton);
               taskList.append(item);
@@ -644,7 +642,7 @@
         }
       }
 
-      taskForm.addEventListener("submit", (event) => {
+      taskForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const description = descriptionInput.value.trim();
 
@@ -653,28 +651,30 @@
           return;
         }
 
-        const task = {
-          id: nextTaskId,
-          description,
-          subject: subjectInput.value,
-          date: dateInput.value,
-        };
-        tasks.push(task);
-        if (!saveTasks()) {
-          tasks.pop();
+        if (!sharedStore) {
+          formStatus.textContent = "Shared sync is not configured. Follow FIREBASE_SETUP.md.";
           return;
         }
-        nextTaskId += 1;
-        renderCalendar();
-        formStatus.textContent = "Task added to the calendar.";
-        taskForm.reset();
-        subjectInput.value = "MATHEMATICS";
-        dateInput.value = formatDateKey(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate(),
-        );
-        descriptionInput.focus();
+
+        try {
+          await sharedStore.add("deadlines", {
+            description,
+            subject: subjectInput.value,
+            date: dateInput.value,
+          });
+          formStatus.textContent = "Task added to the shared calendar.";
+          taskForm.reset();
+          subjectInput.value = "MATHEMATICS";
+          dateInput.value = formatDateKey(
+            today.getFullYear(),
+            today.getMonth(),
+            today.getDate(),
+          );
+          descriptionInput.focus();
+        } catch (error) {
+          formStatus.textContent = `Could not add task: ${error.message}`;
+          console.error("Unable to add shared task:", error);
+        }
       });
 
       document.querySelector("#previous-month").addEventListener("click", () => {
@@ -702,6 +702,42 @@
       );
       renderColorLegend();
       renderCalendar();
+
+      try {
+        sharedStore = createSharedStore();
+        sharedStore.watch(
+          "deadlines",
+          (items) => {
+            tasks = items.filter(
+              (task) =>
+                task &&
+                typeof task.id === "string" &&
+                typeof task.description === "string" &&
+                typeof task.date === "string" &&
+                Object.hasOwn(subjectColors, task.subject),
+            );
+            renderCalendar();
+            formStatus.textContent = "Connected to the live shared calendar.";
+          },
+          (error) => {
+            formStatus.textContent = `Could not sync deadlines: ${error.message}`;
+            console.error("Unable to sync shared deadlines:", error);
+          },
+        );
+        void sharedStore
+          .importLegacy("deadlines", loadLegacyTasks())
+          .then((count) => {
+            if (count > 0) {
+              formStatus.textContent = `Imported ${count} saved deadline(s) to the shared calendar.`;
+            }
+          })
+          .catch((error) => {
+            formStatus.textContent = `Could not import saved deadlines: ${error.message}`;
+            console.error("Unable to import legacy deadlines:", error);
+          });
+      } catch (error) {
+        formStatus.textContent = error.message;
+      }
     </script>
   </body>
 </html>

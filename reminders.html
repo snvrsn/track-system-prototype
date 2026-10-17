@@ -199,7 +199,7 @@
         <form id="reminder-form" class="reminder-form">
           <h2 class="mb-5 text-xl font-extrabold uppercase">Add a Reminder</h2>
           <label for="reminder-title">Title</label>
-          <input id="reminder-title" name="title" type="text" required />
+          <input id="reminder-title" name="title" type="text" maxlength="160" required />
 
           <label for="reminder-subject">Subject</label>
           <select id="reminder-subject" name="subject" required>
@@ -220,7 +220,7 @@
           </section>
 
           <label for="reminder-details">Details</label>
-          <textarea id="reminder-details" name="details" placeholder="Add a few details (optional)"></textarea>
+          <textarea id="reminder-details" name="details" maxlength="2000" placeholder="Add a few details (optional)"></textarea>
 
           <button class="add-reminder" type="submit">Add</button>
           <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
@@ -228,7 +228,9 @@
       </section>
       <a href="index.html" class="mt-8 font-bold uppercase text-[#001cc8] underline">Back to home</a>
     </main>
-    <script>
+    <script type="module">
+      import { createSharedStore } from "./shared-store.js";
+
       const STORAGE_KEY = "track-reminders";
       const reminderBoard = document.querySelector("#reminder-board");
       const reminderForm = document.querySelector("#reminder-form");
@@ -269,13 +271,31 @@
         formStatus.textContent = message;
       }
 
-      function saveReminders() {
+      function loadLegacyReminders() {
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
-          setStatus("Reminders saved in this browser.");
+          const savedReminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+          if (!Array.isArray(savedReminders)) {
+            throw new Error("Saved reminder data has an invalid format.");
+          }
+
+          return savedReminders
+            .filter(
+              (reminder) =>
+                reminder &&
+                typeof reminder.id === "string" &&
+                typeof reminder.title === "string" &&
+                typeof reminder.details === "string",
+            )
+            .map((reminder) => ({
+              ...reminder,
+              subject: Object.hasOwn(subjectColors, reminder.subject)
+                ? reminder.subject
+                : "MATHEMATICS",
+            }));
         } catch (error) {
-          setStatus("Could not save reminders in this browser. They will be lost when you leave this page.");
-          console.error("Unable to save reminders:", error);
+          setStatus(`Could not load saved reminders: ${error.message}`);
+          console.error("Unable to load legacy reminders:", error);
+          return [];
         }
       }
 
@@ -323,31 +343,47 @@
         });
       }
 
-      try {
-        const savedReminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-        if (Array.isArray(savedReminders)) {
-          reminders = savedReminders.filter(
-            (reminder) =>
-              reminder &&
-              typeof reminder.id === "string" &&
-              typeof reminder.title === "string" &&
-              typeof reminder.details === "string",
-          );
-          reminders = reminders.map((reminder) => ({
-            ...reminder,
-            subject: Object.hasOwn(subjectColors, reminder.subject) ? reminder.subject : "MATHEMATICS",
-          }));
-        } else {
-          setStatus("Saved reminders could not be read because their data is invalid.");
-        }
-      } catch (error) {
-        setStatus("Could not load saved reminders from this browser.");
-        console.error("Unable to load reminders:", error);
-      }
       renderSubjectLegend();
       renderReminders();
 
-      reminderForm.addEventListener("submit", (event) => {
+      let sharedStore = null;
+      try {
+        sharedStore = createSharedStore();
+        sharedStore.watch(
+          "reminders",
+          (items) => {
+            reminders = items.filter(
+              (reminder) =>
+                reminder &&
+                typeof reminder.id === "string" &&
+                typeof reminder.title === "string" &&
+                typeof reminder.details === "string" &&
+                Object.hasOwn(subjectColors, reminder.subject),
+            );
+            renderReminders();
+            setStatus("Connected to live shared reminders.");
+          },
+          (error) => {
+            setStatus(`Could not sync reminders: ${error.message}`);
+            console.error("Unable to sync shared reminders:", error);
+          },
+        );
+        void sharedStore
+          .importLegacy("reminders", loadLegacyReminders())
+          .then((count) => {
+            if (count > 0) {
+              setStatus(`Imported ${count} saved reminder(s) to the shared board.`);
+            }
+          })
+          .catch((error) => {
+            setStatus(`Could not import saved reminders: ${error.message}`);
+            console.error("Unable to import legacy reminders:", error);
+          });
+      } catch (error) {
+        setStatus(error.message);
+      }
+
+      reminderForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const title = titleInput.value.trim();
         if (!title) {
@@ -355,26 +391,43 @@
           setStatus("Enter a title for your reminder.");
           return;
         }
-        reminders.push({
-          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          title,
-          subject: subjectInput.value,
-          details: detailsInput.value.trim(),
-        });
-        renderReminders();
-        saveReminders();
-        reminderForm.reset();
-        subjectInput.value = "MATHEMATICS";
-        titleInput.focus();
+
+        if (!sharedStore) {
+          setStatus("Shared sync is not configured. Follow FIREBASE_SETUP.md.");
+          return;
+        }
+
+        try {
+          await sharedStore.add("reminders", {
+            title,
+            subject: subjectInput.value,
+            details: detailsInput.value.trim(),
+          });
+          setStatus("Reminder added to the shared board.");
+          reminderForm.reset();
+          subjectInput.value = "MATHEMATICS";
+          titleInput.focus();
+        } catch (error) {
+          setStatus(`Could not add reminder: ${error.message}`);
+          console.error("Unable to add shared reminder:", error);
+        }
       });
 
       reminderBoard.addEventListener("click", (event) => {
         if (!(event.target instanceof Element)) return;
         const deleteButton = event.target.closest("[data-delete-id]");
         if (!deleteButton) return;
-        reminders = reminders.filter((reminder) => reminder.id !== deleteButton.dataset.deleteId);
-        renderReminders();
-        saveReminders();
+        if (!sharedStore) {
+          setStatus("Shared sync is not configured. Follow FIREBASE_SETUP.md.");
+          return;
+        }
+        void sharedStore
+          .delete("reminders", deleteButton.dataset.deleteId)
+          .then(() => setStatus("Reminder deleted from the shared board."))
+          .catch((error) => {
+            setStatus(`Could not delete reminder: ${error.message}`);
+            console.error("Unable to delete shared reminder:", error);
+          });
       });
     </script>
   </body>
