@@ -8,10 +8,11 @@
       content="Plan school tasks and important dates in your monthly calendar."
     />
     <title>School Calendar — Track</title>
+    <link rel="stylesheet" href="./auth-gate.css" />
     <style>
       :root {
         color-scheme: light;
-        --paper: #fffbf4;
+        --paper: #fff7f1;
         --navy: #20209b;
         --navy-light: #4141b7;
         --muted: #68688d;
@@ -253,11 +254,36 @@
         cursor: pointer;
         font: inherit;
         font-weight: 700;
-        transition: background-color 140ms ease;
+        transition:
+          background-color 140ms ease,
+          box-shadow 160ms ease,
+          transform 160ms ease;
       }
 
       button:hover {
         background: #3030ad;
+      }
+
+      button:not(.task-badge) {
+        box-shadow:
+          0 4px 0 rgb(32 32 155 / 40%),
+          0 6px 10px rgb(32 32 155 / 16%),
+          inset 0 1px 0 rgb(255 251 244 / 25%);
+      }
+
+      button:not(.task-badge):hover {
+        box-shadow:
+          0 1px 0 rgb(32 32 155 / 40%),
+          0 2px 5px rgb(32 32 155 / 16%),
+          inset 0 1px 0 rgb(255 251 244 / 25%);
+        transform: translateY(3px);
+      }
+
+      button:not(.task-badge):active {
+        box-shadow:
+          0 0 0 rgb(32 32 155 / 40%),
+          inset 0 1px 0 rgb(255 251 244 / 25%);
+        transform: translateY(4px);
       }
 
       .color-legend {
@@ -333,6 +359,33 @@
         box-shadow: 0 20px 60px rgb(0 0 0 / 24%);
       }
 
+      .deadline-dialog[open] .deadline-dialog-panel {
+        animation: deadline-pop-in 420ms cubic-bezier(0.2, 1.5, 0.5, 1) both;
+      }
+
+      @keyframes deadline-pop-in {
+        0% {
+          opacity: 0;
+          transform: scale(0.86) translateY(18px);
+        }
+
+        65% {
+          opacity: 1;
+          transform: scale(1.035) translateY(-4px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .deadline-dialog[open] .deadline-dialog-panel {
+          animation: none;
+        }
+      }
+
       .deadline-dialog-header {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto auto;
@@ -340,6 +393,48 @@
         gap: 12px;
         margin: 0;
         text-align: left;
+      }
+
+      .schedule-dialog-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0;
+        text-align: left;
+      }
+
+      .schedule-dialog-header h2 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+
+      .schedule-dialog-fields {
+        display: grid;
+        gap: 12px;
+      }
+
+      .schedule-dialog-fields textarea {
+        min-height: 90px;
+        padding: 10px 12px;
+        border: 1px solid var(--navy-light);
+        border-radius: 8px;
+        background: var(--white);
+        color: var(--navy);
+        font: inherit;
+        resize: vertical;
+      }
+
+      .schedule-dialog-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .task-reminder-summary {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.85rem;
       }
 
       .deadline-dialog-date {
@@ -671,7 +766,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="auth-pending">
     <main class="page">
       <a class="back-link" href="index.html">Back to Main Menu</a>
 
@@ -709,6 +804,8 @@
               <label class="field-label" for="task-date">Date</label>
               <input id="task-date" name="date" type="date" required />
             </div>
+            <button id="set-deadline-reminder" type="button">Set a Reminder</button>
+            <p class="task-reminder-summary" id="task-reminder-summary" role="status" aria-live="polite"></p>
             <button type="submit">Add Task</button>
             <section class="color-legend" aria-labelledby="legend-heading">
               <h3 id="legend-heading">Color Coding</h3>
@@ -794,6 +891,28 @@
           <p class="deadline-dialog-status" id="deadline-dialog-status" role="status" aria-live="polite"></p>
         </div>
       </dialog>
+
+      <dialog class="deadline-dialog" id="schedule-dialog" aria-labelledby="schedule-dialog-title">
+        <form class="deadline-dialog-panel schedule-dialog-fields" id="schedule-form">
+          <header class="schedule-dialog-header">
+            <h2 id="schedule-dialog-title">Set a Reminder</h2>
+            <button id="schedule-dialog-close" type="button" aria-label="Close reminder scheduling">×</button>
+          </header>
+          <label>
+            <span class="field-label">Notification date and time</span>
+            <input id="schedule-date-time" type="datetime-local" required />
+          </label>
+          <label>
+            <span class="field-label">Additional description (optional)</span>
+            <textarea id="schedule-description" maxlength="500" placeholder="Add a note to include in your notification"></textarea>
+          </label>
+          <div class="schedule-dialog-actions">
+            <button type="submit">Save reminder</button>
+            <button id="schedule-clear" type="button">Remove reminder</button>
+          </div>
+          <p class="deadline-dialog-status" id="schedule-status" role="status" aria-live="polite"></p>
+        </form>
+      </dialog>
     </main>
 
     <script type="module">
@@ -803,6 +922,14 @@
         getSubjectList as normalizeSubjectList,
         getSubjectMap,
       } from "./shared-store.js";
+      import { requireSignIn } from "./auth-gate.js";
+      import {
+        cancelPersonalNotifications,
+        schedulePersonalNotification,
+      } from "./notification-store.js";
+      import { enablePushNotifications } from "./push-client.js";
+
+      const currentUser = await requireSignIn();
 
       const calendarGrid = document.querySelector("#calendar-grid");
       const monthHeading = document.querySelector("#month-heading");
@@ -824,6 +951,12 @@
       const deadlineDateForm = document.querySelector("#deadline-date-form");
       const deadlineEditDate = document.querySelector("#deadline-edit-date");
       const deadlineDeleteConfirmation = document.querySelector("#deadline-delete-confirmation");
+      const scheduleDialog = document.querySelector("#schedule-dialog");
+      const scheduleForm = document.querySelector("#schedule-form");
+      const scheduleDateTime = document.querySelector("#schedule-date-time");
+      const scheduleDescription = document.querySelector("#schedule-description");
+      const scheduleStatus = document.querySelector("#schedule-status");
+      const reminderSummary = document.querySelector("#task-reminder-summary");
       const storageKey = "track-school-calendar-tasks";
       const subjectColors = {
         MATHEMATICS: "#1D4ED8",
@@ -842,6 +975,7 @@
       let sharedStore = null;
       let activeDeadlineId = null;
       let dialogTrigger = null;
+      let deadlineReminderDraft = null;
       const today = new Date();
       let displayedYear = today.getFullYear();
       let displayedMonth = today.getMonth();
@@ -977,6 +1111,61 @@
 
       document.querySelector("#deadline-dialog-close").addEventListener("click", closeDeadlineDialog);
 
+      function toLocalDateTimeValue(date) {
+        const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+        return localDate.toISOString().slice(0, 16);
+      }
+
+      document.querySelector("#set-deadline-reminder").addEventListener("click", () => {
+        const earliestTime = new Date(Date.now() + 60_000);
+        scheduleDateTime.min = toLocalDateTimeValue(earliestTime);
+        scheduleDateTime.value = deadlineReminderDraft
+          ? toLocalDateTimeValue(new Date(deadlineReminderDraft.scheduledAt))
+          : "";
+        scheduleDescription.value = deadlineReminderDraft?.body || "";
+        scheduleStatus.textContent = "";
+        scheduleDialog.showModal();
+        scheduleDateTime.focus();
+      });
+
+      scheduleForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const scheduledAt = new Date(scheduleDateTime.value).getTime();
+        if (!Number.isFinite(scheduledAt) || scheduledAt <= Date.now()) {
+          scheduleStatus.textContent = "Choose a notification time in the future.";
+          scheduleDateTime.focus();
+          return;
+        }
+
+        try {
+          await enablePushNotifications(currentUser);
+          deadlineReminderDraft = {
+            scheduledAt,
+            body: scheduleDescription.value.trim(),
+          };
+          reminderSummary.textContent = `Reminder set for ${new Intl.DateTimeFormat(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }).format(new Date(scheduledAt))}.`;
+          scheduleDialog.close();
+        } catch (error) {
+          scheduleStatus.textContent = error.message;
+          console.error("Unable to prepare deadline notification:", error);
+        }
+      });
+
+      document.querySelector("#schedule-clear").addEventListener("click", () => {
+        deadlineReminderDraft = null;
+        reminderSummary.textContent = "";
+        scheduleDialog.close();
+      });
+      document.querySelector("#schedule-dialog-close").addEventListener("click", () => {
+        scheduleDialog.close();
+      });
+      scheduleDialog.addEventListener("click", (event) => {
+        if (event.target === scheduleDialog) scheduleDialog.close();
+      });
+
       deadlineEditButton.addEventListener("click", () => {
         const task = tasks.find((item) => item.id === activeDeadlineId);
         if (!task) return;
@@ -1099,6 +1288,15 @@
           await sharedStore.delete("deadlines", taskId);
           closeDeadlineDialog();
           formStatus.textContent = "Deadline deleted from the shared calendar.";
+          try {
+            const canceledCount = await cancelPersonalNotifications(currentUser, "deadline", taskId);
+            if (canceledCount) {
+              formStatus.textContent = "Deadline deleted and your pending notifications were canceled.";
+            }
+          } catch (error) {
+            formStatus.textContent = `Deadline deleted, but pending notifications could not be canceled: ${error.message}`;
+            console.error("Unable to cancel notifications for deleted deadline:", error);
+          }
         } catch (error) {
           deadlineDialogStatus.textContent = `Could not delete deadline: ${error.message}`;
           console.error("Unable to delete shared deadline:", error);
@@ -1253,25 +1451,46 @@
           return;
         }
 
+        let deadlineId;
         try {
-          await sharedStore.add("deadlines", {
+          deadlineId = await sharedStore.add("deadlines", {
             description,
             subjects: getSubjectMap(subjects),
             date: dateInput.value,
           });
-          formStatus.textContent = "Task added to the shared calendar.";
-          taskForm.reset();
-          updateSubjectSummary();
-          dateInput.value = formatDateKey(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate(),
-          );
-          descriptionInput.focus();
         } catch (error) {
           formStatus.textContent = `Could not add task: ${error.message}`;
           console.error("Unable to add shared task:", error);
+          return;
         }
+
+        if (deadlineReminderDraft) {
+          try {
+            await schedulePersonalNotification(currentUser, {
+              scheduledAt: deadlineReminderDraft.scheduledAt,
+              title: `Upcoming deadline: ${description}`,
+              body: deadlineReminderDraft.body || `Deadline date: ${formatDeadlineDate(dateInput.value)}.`,
+              targetType: "deadline",
+              targetId: deadlineId,
+            });
+            formStatus.textContent = "Deadline added and your personal notification is scheduled.";
+          } catch (error) {
+            formStatus.textContent = `Deadline added, but its notification could not be scheduled: ${error.message}`;
+            console.error("Unable to schedule deadline notification:", error);
+          }
+        } else {
+          formStatus.textContent = "Task added to the shared calendar.";
+        }
+        taskForm.reset();
+        deadlineReminderDraft = null;
+        reminderSummary.textContent = "";
+        updateSubjectSummary();
+        dateInput.value = formatDateKey(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate(),
+        );
+        descriptionInput.focus();
       });
 
       document.querySelector("#previous-month").addEventListener("click", () => {
@@ -1316,6 +1535,18 @@
             )
               .map((task) => ({ ...task, subjects: getSubjectMap(getSubjectList(task)) }));
             renderCalendar();
+            const requestedDeadlineId = new URLSearchParams(window.location.search).get("deadline");
+            if (requestedDeadlineId) {
+              const requestedTask = tasks.find((task) => task.id === requestedDeadlineId);
+              if (requestedTask) {
+                const [year, month] = requestedTask.date.split("-").map(Number);
+                displayedYear = year;
+                displayedMonth = month - 1;
+                renderCalendar();
+                openDeadlineDialog(requestedTask.id, null);
+                window.history.replaceState(null, "", window.location.pathname);
+              }
+            }
             formStatus.textContent = "Connected to the live shared calendar.";
           },
           (error) => {

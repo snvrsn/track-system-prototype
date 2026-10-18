@@ -1,0 +1,131 @@
+body.auth-pending > main {
+  visibility: hidden;
+}
+
+.auth-gate {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #fff7f1;
+  color: #20209b;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.auth-gate-card {
+  width: min(100%, 360px);
+  padding: 28px;
+  border: 2px solid #20209b;
+  border-radius: 16px;
+  background: #fff7f1;
+  text-align: center;
+}
+
+.auth-gate-card h1 {
+  margin: 0;
+  font-family: "Arial Black", Arial, Helvetica, sans-serif;
+  font-size: 2.5rem;
+  letter-spacing: -0.065em;
+}
+
+.auth-gate-card p {
+  margin: 12px 0 20px;
+}
+
+.auth-gate-card button,
+.account-bar button {
+  border: 0;
+  border-radius: 9px;
+  padding: 10px 14px;
+  background: #20209b;
+  color: #fff7f1;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  box-shadow: 0 4px 0 rgb(32 32 155 / 40%), 0 6px 10px rgb(32 32 155 / 16%);
+}
+
+.auth-gate-card button:hover,
+.account-bar button:hover {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgb(32 32 155 / 40%), 0 2px 5px rgb(32 32 155 / 16%);
+}
+
+.auth-gate-card button:active,
+.account-bar button:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 rgb(32 32 155 / 40%);
+}
+
+.auth-gate-card button:disabled,
+.account-bar button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.auth-gate-status {
+  min-height: 1.4em;
+  overflow-wrap: anywhere;
+  font-size: 0.88rem;
+}
+
+.account-bar {
+  position: fixed;
+  z-index: 900;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  max-width: calc(100vw - 16px);
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid rgb(32 32 155 / 20%);
+  border-radius: 12px;
+  background: rgb(255 247 241 / 95%);
+  box-shadow: 0 3px 10px rgb(32 32 155 / 12%);
+  font: 12px Arial, Helvetica, sans-serif;
+}
+
+.account-bar button {
+  padding: 7px 9px;
+  font-size: 12px;
+}
+
+.account-email {
+  max-width: min(22vw, 200px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-status {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  max-width: min(90vw, 360px);
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #fff7f1;
+  color: #20209b;
+  box-shadow: 0 2px 8px rgb(32 32 155 / 15%);
+}
+
+.account-status:empty {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .account-email {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-gate-card button,
+  .account-bar button {
+    transition: none;
+  }
+}

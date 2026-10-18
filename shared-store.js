@@ -1,6 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {
-  getDatabase,
   onValue,
   push,
   ref,
@@ -8,6 +6,7 @@ import {
   set,
   update,
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+import { database } from "./firebase-app.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const collections = new Set(["deadlines", "reminders"]);
@@ -86,9 +85,6 @@ export function createSharedStore() {
       "Shared sync is not configured yet. Follow the steps in FIREBASE_SETUP.md.",
     );
   }
-
-  const app = initializeApp(firebaseConfig);
-  const database = getDatabase(app);
 
   return {
     watch(collection, onItems, onError) {

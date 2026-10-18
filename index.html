@@ -9,6 +9,7 @@
     />
     <title>Track — Academic Calendar</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./auth-gate.css" />
     <style>
       :root {
         color-scheme: light;
@@ -26,17 +27,47 @@
         font-family: "Arial Black", Arial, Helvetica, sans-serif;
         letter-spacing: -0.065em;
         line-height: 0.95;
+        transition: text-shadow 180ms ease;
+      }
+
+      .display-title:hover {
+        text-shadow: 0 0 12px rgba(32, 32, 155, 0.35);
       }
 
       .tagline {
         font-family: "Bodoni MT", "Times New Roman", serif;
         letter-spacing: -0.035em;
       }
+
+      .nav-button {
+        box-shadow:
+          0 4px 0 rgba(32, 32, 155, 0.45),
+          0 6px 10px rgba(32, 32, 155, 0.18),
+          inset 0 1px 0 rgba(255, 247, 241, 0.25);
+        transition:
+          transform 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .nav-button:hover {
+        box-shadow:
+          0 1px 0 rgba(32, 32, 155, 0.45),
+          0 2px 5px rgba(32, 32, 155, 0.18),
+          inset 0 1px 0 rgba(255, 247, 241, 0.25);
+        transform: translateY(3px);
+      }
+
+      .nav-button:active {
+        box-shadow:
+          0 0 0 rgba(32, 32, 155, 0.45),
+          inset 0 1px 0 rgba(255, 247, 241, 0.25);
+        transform: translateY(4px);
+      }
     </style>
   </head>
-  <body class="min-h-screen">
+  <body class="min-h-screen auth-pending">
     <main
-      class="mx-auto flex w-full max-w-[385px] flex-col items-center border-b border-[#4141b7] px-4 pb-[54px] pt-[101px] text-center max-sm:pb-12 max-sm:pt-[15vh]"
+      class="mx-auto flex min-h-screen w-full max-w-[385px] flex-col items-center justify-center px-4 py-8 text-center"
     >
       <header class="w-full">
         <h1 class="display-title text-[76px] font-black uppercase max-sm:text-[clamp(3.5rem,16vw,4.75rem)]">
@@ -50,23 +81,28 @@
       <nav aria-label="Main navigation" class="mt-[10px] flex w-[203px] flex-col gap-[15px]">
         <a
           href="https://www.facebook.com/share/p/1E6VwGy6jL/"
-          class="flex h-[33px] items-center justify-center rounded-[10px] bg-[#20209b] px-2 text-[16px] font-extrabold uppercase leading-none text-[#fff7f1] underline decoration-2 underline-offset-2 transition-colors hover:bg-[#3030ad] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#20209b]"
+          class="nav-button flex h-[33px] items-center justify-center rounded-[10px] bg-[#20209b] px-2 text-[16px] font-extrabold uppercase leading-none text-[#fff7f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#20209b]"
         >
           School Calendar
         </a>
         <a
           href="deadlines-calendar.html"
-          class="flex h-[33px] items-center justify-center rounded-[10px] bg-[#20209b] px-2 text-[16px] font-extrabold uppercase leading-none text-[#fff7f1] underline decoration-2 underline-offset-2 transition-colors hover:bg-[#3030ad] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#20209b]"
+          class="nav-button flex h-[33px] items-center justify-center rounded-[10px] bg-[#20209b] px-2 text-[16px] font-extrabold uppercase leading-none text-[#fff7f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#20209b]"
         >
           Deadlines
         </a>
         <a
           href="reminders.html"
-          class="flex h-[33px] items-center justify-center rounded-[10px] bg-[#20209b] px-2 text-[16px] font-extrabold uppercase leading-none text-[#fff7f1] underline decoration-2 underline-offset-2 transition-colors hover:bg-[#3030ad] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#20209b]"
+          class="nav-button flex h-[33px] items-center justify-center rounded-[10px] bg-[#20209b] px-2 text-[16px] font-extrabold uppercase leading-none text-[#fff7f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#20209b]"
         >
           Reminders
         </a>
       </nav>
     </main>
+    <script type="module">
+      import { requireSignIn } from "./auth-gate.js";
+
+      await requireSignIn();
+    </script>
   </body>
 </html>
